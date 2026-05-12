@@ -15,7 +15,7 @@
     <div class="col-4">
         <div class="mb-3">
             <label for="referenceDataTypeSelect" class="form-label">Reference data type</label>
-            @Html.DropDownListFor(a => a.SelectedReferenceDataType, Html.GetSelectListForEnum<ReferenceDataType>(), null, new { @class = "form-select" })
+            @Html.DropDownListFor(a => a.SelectedReferenceDataType, MvcHelpers.GetSelectListForEnum<ReferenceDataType>(), null, new { @class = "form-select" })
         </div>
         <div class="mb-3">
             <label for="referenceDataTextInput" class="form-label">Text</label>
