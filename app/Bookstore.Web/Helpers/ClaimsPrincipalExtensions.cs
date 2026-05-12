@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Security.Principal;
 
 namespace Bookstore.Web.Helpers
@@ -7,12 +7,12 @@ namespace Bookstore.Web.Helpers
     {
         public static string GetSub(this IPrincipal claimsPrincipal)
         {
-            return ((ClaimsPrincipal)claimsPrincipal).FindFirst(x => x.Type.Contains("nameidentifier"))?.Value;
+            return ((ClaimsPrincipal)claimsPrincipal).FindFirst(x => x.Type.Contains("nameidentifier"))?.Value ?? string.Empty;
         }
 
         public static string GetSub(this ClaimsIdentity identity)
         {
-            return identity.FindFirst(x => x.Type.Contains("nameidentifier"))?.Value;
+            return identity.FindFirst(x => x.Type.Contains("nameidentifier"))?.Value ?? string.Empty;
         }
     }
 }

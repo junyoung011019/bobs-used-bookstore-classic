@@ -1,9 +1,9 @@
-﻿using Bookstore.Domain.Books;
+using Bookstore.Domain.Books;
 using Bookstore.Domain.Offers;
 using Bookstore.Domain.Orders;
 using Bookstore.Web.Areas.Admin.Models.Dashboard;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using System.Web.Mvc;
 
 namespace Bookstore.Web.Areas.Admin.Controllers
 {
@@ -20,7 +20,7 @@ namespace Bookstore.Web.Areas.Admin.Controllers
             this.bookService = bookService;
         }
 
-        public async Task<ActionResult> Index()
+        public async Task<IActionResult> Index()
         {
             var orderStats = await orderService.GetStatisticsAsync();
             var offerStats = await offerService.GetStatisticsAsync();
