@@ -1,9 +1,8 @@
-﻿using Bookstore.Domain;
+using Bookstore.Domain;
 using Bookstore.Domain.Books;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,10 +20,10 @@ namespace Bookstore.Data.Repositories
         async Task<Book> IBookRepository.GetAsync(int id)
         {
             return await dbContext.Book
-                .Include("Genre")
-                .Include("Publisher")
-                .Include("BookType")
-                .Include("Condition")
+                .Include(x => x.Genre)
+                .Include(x => x.Publisher)
+                .Include(x => x.BookType)
+                .Include(x => x.Condition)
                 .SingleAsync(x => x.Id == id);
         }
 
@@ -33,39 +32,25 @@ namespace Bookstore.Data.Repositories
             var query = dbContext.Book.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filters.Name))
-            {
                 query = query.Where(x => x.Name.Contains(filters.Name));
-            }
 
             if (!string.IsNullOrWhiteSpace(filters.Author))
-            {
                 query = query.Where(x => x.Author.Contains(filters.Author));
-            }
 
             if (filters.ConditionId.HasValue)
-            {
                 query = query.Where(x => x.ConditionId == filters.ConditionId);
-            }
 
             if (filters.BookTypeId.HasValue)
-            {
                 query = query.Where(x => x.BookTypeId == filters.BookTypeId);
-            }
 
             if (filters.GenreId.HasValue)
-            {
                 query = query.Where(x => x.GenreId == filters.GenreId);
-            }
 
             if (filters.PublisherId.HasValue)
-            {
                 query = query.Where(x => x.PublisherId == filters.PublisherId);
-            }
 
             if (filters.LowStock)
-            {
                 query = query.Where(x => x.Quantity <= Book.LowBookThreshold);
-            }
 
             query = query
                 .Include(x => x.Genre)
@@ -74,9 +59,7 @@ namespace Bookstore.Data.Repositories
                 .Include(x => x.Condition);
 
             var result = new PaginatedList<Book>(query, pageIndex, pageSize);
-
             await result.PopulateAsync();
-
             return result;
         }
 
@@ -91,37 +74,23 @@ namespace Bookstore.Data.Repositories
                                          x.BookType.Text.Contains(searchString) ||
                                          x.ISBN.Contains(searchString) ||
                                          x.Publisher.Text.Contains(searchString));
-            };
-
-            switch (sortBy)
-            {
-                case "Name":
-                    query = query.OrderBy(x => x.Name);
-                    break;
-
-                case "PriceAsc":
-                    query = query.OrderBy(x => x.Price);
-                    break;
-
-                case "PriceDesc":
-                    query = query.OrderByDescending(x => x.Price);
-                    break;
-
-                default:
-                    query.OrderBy(x => x.Name);
-                    break;
             }
 
+            query = sortBy switch
+            {
+                "PriceAsc" => query.OrderBy(x => x.Price),
+                "PriceDesc" => query.OrderByDescending(x => x.Price),
+                _ => query.OrderBy(x => x.Name)
+            };
+
             var result = new PaginatedList<Book>(query, pageIndex, pageSize);
-
             await result.PopulateAsync();
-
             return result;
         }
 
         async Task IBookRepository.AddAsync(Book book)
         {
-            await Task.Run(() => dbContext.Book.Add(book));
+            await dbContext.Book.AddAsync(book);
         }
 
         async Task IBookRepository.UpdateAsync(Book book)
@@ -131,9 +100,7 @@ namespace Bookstore.Data.Repositories
             dbContext.Entry(existing).CurrentValues.SetValues(book);
 
             if (string.IsNullOrWhiteSpace(book.CoverImageUrl))
-            {
                 dbContext.Entry(existing).Property(x => x.CoverImageUrl).IsModified = false;
-            }
         }
 
         async Task IBookRepository.SaveChangesAsync()

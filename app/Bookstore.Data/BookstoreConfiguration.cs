@@ -1,34 +1,47 @@
-﻿using System;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
-using System.Configuration;
 
-namespace BobsBookstoreClassic.Data
+namespace Bookstore.Data
 {
     public sealed class BookstoreConfiguration
     {
-        private static readonly Lazy<BookstoreConfiguration> Lazy = new Lazy<BookstoreConfiguration>(() => new BookstoreConfiguration());
+        private static BookstoreConfiguration? _instance;
+        private static readonly object _lock = new object();
 
-        private static BookstoreConfiguration Instance => Lazy.Value;
+        private readonly Dictionary<string, string> _appSettings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, string> _connectionStrings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        private readonly Dictionary<string, string> _appSettings = new Dictionary<string, string>();
-        private readonly Dictionary<string, string> _connectionStrings = new Dictionary<string, string>();
+        private BookstoreConfiguration() { }
 
-        private BookstoreConfiguration()
+        public static void Initialize(IConfiguration configuration)
         {
-            foreach (string key in ConfigurationManager.AppSettings)
+            lock (_lock)
             {
-                _appSettings[key] = ConfigurationManager.AppSettings[key];
+                _instance = new BookstoreConfiguration();
 
-                if (Environment.GetEnvironmentVariable(key) != null)
+                foreach (var kvp in configuration.AsEnumerable())
                 {
-                    _appSettings[key] = Environment.GetEnvironmentVariable(key);
+                    if (kvp.Value != null)
+                        _instance._appSettings[kvp.Key] = kvp.Value;
+                }
+
+                var connStrings = configuration.GetSection("ConnectionStrings");
+                foreach (var child in connStrings.GetChildren())
+                {
+                    if (child.Value != null)
+                        _instance._connectionStrings[child.Key] = child.Value;
                 }
             }
+        }
 
-            foreach (ConnectionStringSettings connectionStringSettings in ConfigurationManager.ConnectionStrings)
+        private static BookstoreConfiguration Instance
+        {
+            get
             {
-                _connectionStrings[connectionStringSettings.Name] = connectionStringSettings.ConnectionString;
-
+                if (_instance == null)
+                    throw new InvalidOperationException("BookstoreConfiguration has not been initialized. Call Initialize() first.");
+                return _instance;
             }
         }
 
@@ -39,13 +52,13 @@ namespace BobsBookstoreClassic.Data
 
         public static string GetSetting(string key)
         {
-            return Instance._appSettings[key];
+            Instance._appSettings.TryGetValue(key, out var value);
+            return value ?? string.Empty;
         }
 
         public static T GetSetting<T>(string key)
         {
-            var value = Instance._appSettings[key];
-
+            var value = GetSetting(key);
             return (T)Convert.ChangeType(value, typeof(T));
         }
 
@@ -56,8 +69,8 @@ namespace BobsBookstoreClassic.Data
 
         public static string GetConnectionString(string key)
         {
-            return Instance._connectionStrings[key];
+            Instance._connectionStrings.TryGetValue(key, out var value);
+            return value ?? string.Empty;
         }
-
     }
 }
