@@ -1,10 +1,8 @@
-﻿using Microsoft.Owin;
-
 namespace Bookstore.Web.Helpers
 {
-    public static class OwinRequestExtensions
+    public static class HttpRequestExtensions
     {
-        public static string GetReturnUrl(this IOwinRequest request)
+        public static string GetReturnUrl(this HttpRequest request)
         {
             return $"{request.Scheme}://{request.Host}/signin-oidc";
         }
